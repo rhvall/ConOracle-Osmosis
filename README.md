@@ -1,6 +1,6 @@
-# Mina zkApp: Oracle
+# ConOracle: Contract Oracle 
 
-This template uses TypeScript.
+This project connects a Mina zkApp to an Oracle, feeding Osmosis data
 
 ## How to build
 
@@ -23,4 +23,4 @@ npm run coverage
 
 ## License
 
-[Apache-2.0](LICENSE)
+[GPLv3](LICENSE)

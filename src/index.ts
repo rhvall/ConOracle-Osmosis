@@ -1,3 +1,3 @@
-import { Add } from './Add.js';
+import { ConOracleOsmosis } from './ConOracleOsmosis.js';
 
-export { Add };
+export { ConOracleOsmosis };
