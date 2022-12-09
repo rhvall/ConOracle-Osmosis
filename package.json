@@ -46,5 +46,8 @@
   },
   "peerDependencies": {
     "snarkyjs": "^0.7.3"
+  },
+  "dependencies": {
+    "ts-dotenv": "^0.9.0"
   }
 }

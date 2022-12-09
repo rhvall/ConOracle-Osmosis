@@ -1,3 +1,11 @@
+// Created by rhvall
+// GNU GENERAL PUBLIC LICENSE
+// Version 3, 29 June 2007
+
+// Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/>
+// Everyone is permitted to copy and distribute verbatim copies
+// of this license document, but changing it is not allowed.
+
 import {
     Field,
     SmartContract,
@@ -6,13 +14,19 @@ import {
     method,
     DeployArgs,
     Permissions,
+    CircuitString,
     PublicKey,
     Signature,
     PrivateKey,
 } from 'snarkyjs';
 
-// The public key of our trusted data provider
-const ORACLE_PUBLIC_KEY = 'B62qoAE4rBRuTgC42vqvEyUqCGhaZsW58SKVW4Ht8aYqP9UTvxFWBgy';
+import { load } from 'ts-dotenv';
+
+const env = load({
+    ENDPOINT: String,
+    ORACLE_PUBLIC_KEY: String,
+    SALT: String
+});
 
 export class ConOracleOsmosis extends SmartContract 
 {
@@ -20,8 +34,10 @@ export class ConOracleOsmosis extends SmartContract
     @state(PublicKey) oraclePublicKey = State<PublicKey>();
 
     // Define contract events
-    events = {
-        verified: Field,
+    events = 
+    {
+        price: Field,
+        token: CircuitString
     };
 
     deploy(args: DeployArgs) 
@@ -38,28 +54,26 @@ export class ConOracleOsmosis extends SmartContract
         super.init(zkappKey);
         
         // Initialize contract state
-        this.oraclePublicKey.set(PublicKey.fromBase58(ORACLE_PUBLIC_KEY));
+        this.oraclePublicKey.set(PublicKey.fromBase58(env.ORACLE_PUBLIC_KEY));
         
         // Specify that caller should include signature with tx instead of proof
         this.requireSignature();
     }
 
-    @method verify(id: Field, creditScore: Field, signature: Signature) 
+    @method verifyPrice(price: Field, token: CircuitString, dataHash: CircuitString, signature: Signature) 
     {
         // Get the oracle public key from the contract state
         const oraclePublicKey = this.oraclePublicKey.get();
         this.oraclePublicKey.assertEquals(oraclePublicKey);
 
         // Evaluate whether the signature is valid for the provided data
-        const validSignature = signature.verify(oraclePublicKey, [id, creditScore]);
+        const validSignature = signature.verify(oraclePublicKey, dataHash.toFields());
 
         // Check that the signature is valid
         validSignature.assertTrue();
 
-        // Check that the provided credit score is greater than 700
-        creditScore.assertGte(Field(700));
-
-        // Emit an event containing the verified users id
-        this.emitEvent('verified', id);
+        // Emit an event containing the verified price and token
+        this.emitEvent('price', price);
+        this.emitEvent('token', token);
     }
 }
