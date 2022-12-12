@@ -24,8 +24,7 @@ import { load } from 'ts-dotenv';
 
 const env = load({
     ENDPOINT: String,
-    ORACLE_PUBLIC_KEY: String,
-    SALT: String
+    ORACLE_PUBLIC_KEY: String
 });
 
 export class ConOracleOsmosis extends SmartContract 
