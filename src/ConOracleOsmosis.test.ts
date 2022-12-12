@@ -18,15 +18,15 @@ import
   AccountUpdate,
   Signature,
   CircuitString,
+  Encoding,
+  Poseidon
 } from 'snarkyjs';
 
 import { load } from 'ts-dotenv';
-const { createHmac } = await import('crypto');
 
 const env = load({
   ENDPOINT: String,
-  ORACLE_PUBLIC_KEY: String,
-  SALT: String
+  ORACLE_PUBLIC_KEY: String
 });
 
 let proofsEnabled = false;
@@ -97,21 +97,18 @@ describe('ConOracleOsmosis', () =>
       const response = await fetch(env.ENDPOINT);
       const respJSON = await response.json();
 
-      const rawData = respJSON.data;
+      const rawData = respJSON.tokens;
       const price = new Field(Math.trunc(rawData[0].price * 100000));
       const token = CircuitString.fromString(rawData[0].symbol);
-      const dataHash = createHmac('sha256', env.SALT) 
-                             .update(rawData.toString())
-                             .digest('hex');
-      const cirHash = CircuitString.fromString(dataHash);
-      const signature = Signature.fromJSON(respJSON.signature);
+      const dataHash = Poseidon.hash(Encoding.stringToFields(rawData[0]));
+      const signature = Signature.fromJSON(rawData[0].signature);
 
       const txn = await Mina.transaction(deployerAccount, () => 
-      {
+      { 
         zkAppInstance.verifyPrice(
           price,
           token,
-          cirHash,
+          dataHash,
           signature ?? fail('something is wrong with the signature')
         );
       });

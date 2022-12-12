@@ -17,7 +17,7 @@ import {
     CircuitString,
     PublicKey,
     Signature,
-    PrivateKey,
+    PrivateKey
 } from 'snarkyjs';
 
 import { load } from 'ts-dotenv';
@@ -60,7 +60,7 @@ export class ConOracleOsmosis extends SmartContract
         this.requireSignature();
     }
 
-    @method verifyPrice(price: Field, token: CircuitString, dataHash: CircuitString, signature: Signature) 
+    @method verifyPrice(price: Field, token: CircuitString, dataHash: Field, signature: Signature) 
     {
         // Get the oracle public key from the contract state
         const oraclePublicKey = this.oraclePublicKey.get();
