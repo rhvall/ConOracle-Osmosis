@@ -7,72 +7,71 @@
 // of this license document, but changing it is not allowed.
 
 import {
-    Field,
-    SmartContract,
-    state,
-    State,
-    method,
-    DeployArgs,
-    Permissions,
-    CircuitString,
-    PublicKey,
-    Signature,
-    PrivateKey
+  Field,
+  SmartContract,
+  state,
+  State,
+  method,
+  DeployArgs,
+  Permissions,
+  CircuitString,
+  PublicKey,
+  Signature,
+  PrivateKey,
 } from 'snarkyjs';
 
-import { load } from 'ts-dotenv';
+// import { load } from 'ts-dotenv';
+//
+// const env = load({
+//     ENDPOINT: String,
+//     ORACLE_PUBLIC_KEY: String
+// });
 
-const env = load({
-    ENDPOINT: String,
-    ORACLE_PUBLIC_KEY: String
-});
+export class ConOracleOsmosis extends SmartContract {
+  // Define contract state
+  @state(PublicKey) oraclePublicKey = State<PublicKey>();
 
-export class ConOracleOsmosis extends SmartContract 
-{
-    // Define contract state
-    @state(PublicKey) oraclePublicKey = State<PublicKey>();
+  // Define contract events
+  events = {
+    hash: Field,
+  };
 
-    // Define contract events
-    events = 
-    {
-        price: Field,
-        token: CircuitString
-    };
+  deploy(args: DeployArgs) {
+    super.deploy(args);
+    this.setPermissions({
+      ...Permissions.default(),
+      editState: Permissions.proofOrSignature(),
+    });
+  }
 
-    deploy(args: DeployArgs) 
-    {
-        super.deploy(args);
-        this.setPermissions({
-            ...Permissions.default(),
-            editState: Permissions.proofOrSignature(),
-        });
-    }
+  @method init(zkappKey: PrivateKey) {
+    super.init();
 
-    @method init(zkappKey: PrivateKey) 
-    {
-        super.init(zkappKey);
-        
-        // Initialize contract state
-        this.oraclePublicKey.set(PublicKey.fromBase58(env.ORACLE_PUBLIC_KEY));
-        
-        // Specify that caller should include signature with tx instead of proof
-        this.requireSignature();
-    }
+    // Initialize contract state
+    // this.oraclePublicKey.set(PublicKey.fromBase58(env.ORACLE_PUBLIC_KEY));
+    this.oraclePublicKey.set(zkappKey.toPublicKey());
 
-    @method verifyPrice(price: Field, token: CircuitString, dataHash: Field, signature: Signature) 
-    {
-        // Get the oracle public key from the contract state
-        const oraclePublicKey = this.oraclePublicKey.get();
-        this.oraclePublicKey.assertEquals(oraclePublicKey);
+    // Specify that caller should include signature with tx instead of proof
+    this.requireSignature();
+  }
 
-        // Evaluate whether the signature is valid for the provided data
-        const validSignature = signature.verify(oraclePublicKey, dataHash.toFields());
+  @method verifyPrice(
+    price: Field,
+    token: CircuitString,
+    dataHash: Field,
+    signature: Signature
+  ) {
+    // Get the oracle public key from the contract state
+    const oraclePublicKey = this.oraclePublicKey.get();
+    this.oraclePublicKey.assertEquals(oraclePublicKey);
 
-        // Check that the signature is valid
-        validSignature.assertTrue();
+    // Evaluate whether the signature is valid for the provided data
+    const validSignature = signature.verify(oraclePublicKey, [dataHash]);
 
-        // Emit an event containing the verified price and token
-        this.emitEvent('price', price);
-        this.emitEvent('token', token);
-    }
+    // Check that the signature is valid
+    validSignature.assertTrue();
+
+    // Emit an event containing the verified price and token
+    this.emitEvent('hash', dataHash);
+  }
 }

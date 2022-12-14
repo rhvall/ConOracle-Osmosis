@@ -1,3 +1,3 @@
-import { ConOracleOsmosis } from './ConOracleOsmosis.js';
+import { ConOracleOsmosis } from './ConOracleOsmosis';
 
 export { ConOracleOsmosis };
